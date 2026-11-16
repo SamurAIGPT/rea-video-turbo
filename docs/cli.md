@@ -10,9 +10,10 @@ pip install -e .
 
 | Command | What it does |
 |---|---|
-| `probe VIDEO` | Print container metadata (codec, FPS, resolution, duration). |
+| `probe VIDEO` | Print container metadata plus forensic clues (capture device, AIGC tags, C2PA, editor signature). |
 | `models` | List supported generation models and limits. |
-| `decompose VIDEO -o DIR [--vlm]` | Detect shots, save first/last frames, contact sheets and `storyboard.jpg`, label each shot, and write `breakdown.json`, `VIDEO.md`, `report.html`. |
+| `decompose VIDEO -o DIR [--vlm] [--stems] [--no-packaging]` | Also analyzes metadata clues, audio (BPM, sound-effect hits, speech/music segments; `--stems` needs optional `demucs`) and on-screen text/overlays/rhythm (`--no-packaging` skips; OCR needs `pip install -e ".[ocr]"`). Detect shots, save first/last frames, contact sheets and `storyboard.jpg`, label each shot, and write `breakdown.json`, `VIDEO.md`, `report.html`. |
+| `summary DIR` | Print a compact conclusion and the low-confidence shots that need review. |
 | `review DIR` | Write `review_tasks.json` (images and current labels per shot) and a `review_answers.json` template, for an agent or person who can look at the images. |
 | `apply-review DIR [ANSWERS] [--by NAME]` | Merge answers into `breakdown.json` and regenerate the reports. Changed shots keep their `original_label`. |
 | `correct DIR --shots 3,4 --label L [--note T]` | Override labels for given shots, regenerate reports, and save the correction to memory. |
