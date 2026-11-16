@@ -75,10 +75,15 @@ def execute_remake(jobs_file: str | Path, dry_run: bool = False,
         start_img = params.get("start_image_path")
         end_img = params.get("end_image_path")
 
-        if start_img and Path(start_img).is_file():
-            payload["image_url"] = "<uploaded_image>" if dry_run else c.resolve_asset_url(start_img)
-        if end_img and Path(end_img).is_file():
-            payload["last_image"] = "<uploaded_image>" if dry_run else c.resolve_asset_url(end_img)
+        start_url = (c.resolve_asset_url(start_img) if not dry_run else "<uploaded_image>") if (start_img and Path(start_img).is_file()) else None
+        end_url = (c.resolve_asset_url(end_img) if not dry_run else "<uploaded_image>") if (end_img and Path(end_img).is_file()) else None
+
+        if start_url:
+            payload["image_url"] = start_url
+        if end_url:
+            payload["last_image"] = end_url
+        if start_url and end_url:
+            payload["images_list"] = [start_url, end_url]
 
         print(f"  Muapi Model: {slug}")
         print(f"  Prompt: {prompt[:100]}...")
@@ -123,8 +128,12 @@ def assemble_remake(breakdown_file: str | Path, results_file: str | Path,
     """Assembles all generated segments on the timeline and renders side-by-side compare.mp4."""
     b_path = Path(breakdown_file).resolve()
     r_path = Path(results_file).resolve()
+    jobs_file = r_path.with_name("jobs.json")
+
     b = json.loads(b_path.read_text(encoding="utf-8"))
     res_data = json.loads(r_path.read_text(encoding="utf-8")).get("results", {})
+    jobs_data = json.loads(jobs_file.read_text(encoding="utf-8")) if jobs_file.is_file() else {}
+    jobs = jobs_data.get("jobs", [])
 
     target_dir = Path(out_dir).resolve() if out_dir else r_path.parent
     target_dir.mkdir(parents=True, exist_ok=True)
@@ -133,28 +142,48 @@ def assemble_remake(breakdown_file: str | Path, results_file: str | Path,
     remake_video = target_dir / "remake.mp4"
     compare_video = target_dir / "compare.mp4"
 
+    # Map shot index to its job and offset
+    shot_map: dict[int, dict[str, Any]] = {}
+    for j in jobs:
+        j_shots = j.get("shots", [j.get("shot")])
+        acc_offset = 0.0
+        for s_num in j_shots:
+            # find duration of s_num from b["shots"]
+            s_obj = next((x for x in b["shots"] if x["index"] == s_num), None)
+            dur = s_obj["duration"] if s_obj else 3.0
+            shot_map[s_num] = {
+                "job": j,
+                "offset": acc_offset,
+                "duration": dur,
+            }
+            acc_offset += dur
+
     # Build concat file list
     concat_list = target_dir / "concat.txt"
     lines = []
     for sh in b["shots"]:
         s_idx = sh["index"]
         dur = sh["duration"]
-        # Find matching result
+        mapping = shot_map.get(s_idx)
+
         matched_video = None
-        for k, v in res_data.items():
-            if str(k) == f"shot_{s_idx:03d}" or str(k) == str(s_idx):
-                matched_video = v.get("video")
-                break
-        if not matched_video:
-            for k, v in res_data.items():
-                if v.get("unit") and str(s_idx) in [str(x) for x in v.get("shots", [])]:
-                    matched_video = v.get("video")
-                    break
+        offset = 0.0
+        if mapping:
+            j = mapping["job"]
+            jid = j["id"]
+            if jid in res_data and res_data[jid].get("video"):
+                matched_video = res_data[jid]["video"]
+                offset = mapping["offset"]
+            elif f"shot_{s_idx:03d}" in res_data and res_data[f"shot_{s_idx:03d}"].get("video"):
+                matched_video = res_data[f"shot_{s_idx:03d}"]["video"]
+                offset = 0.0
+        elif f"shot_{s_idx:03d}" in res_data and res_data[f"shot_{s_idx:03d}"].get("video"):
+            matched_video = res_data[f"shot_{s_idx:03d}"]["video"]
+            offset = 0.0
 
         if matched_video and Path(matched_video).is_file():
-            # Fit clip to shot duration
             fitted = target_dir / "segments" / f"fitted_shot_{s_idx:03d}.mp4"
-            _fit_clip_to_duration(Path(matched_video), fitted, dur)
+            _fit_clip_to_duration(Path(matched_video), fitted, dur, start_offset=offset)
             lines.append(f"file '{fitted.as_posix()}'")
 
     if not lines:
@@ -173,25 +202,26 @@ def assemble_remake(breakdown_file: str | Path, results_file: str | Path,
     ]
     subprocess.run(concat_cmd, check=True)
 
-    # Render side-by-side compare.mp4 (Original | Remake)
+    # Render side-by-side compare.mp4 (Original | Remake) - scale both to height 1080
     compare_cmd = [
         "ffmpeg", "-v", "error", "-y",
         "-i", str(src_video),
         "-i", str(remake_video),
-        "-filter_complex", "[0:v][1:v]hstack[v]",
+        "-filter_complex", "[0:v]scale=-2:1080[v0];[1:v]scale=-2:1080[v1];[v0][v1]hstack[v]",
         "-map", "[v]", "-map", "0:a?",
         "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac",
-        str(compare_video)
+        "-shortest", str(compare_video)
     ]
     subprocess.run(compare_cmd, check=True)
 
     return remake_video, compare_video
 
 
-def _fit_clip_to_duration(src: Path, dst: Path, target_dur: float) -> None:
+def _fit_clip_to_duration(src: Path, dst: Path, target_dur: float, start_offset: float = 0.0) -> None:
     """Trims or retimes a video clip to match the target shot duration exactly."""
     cmd = [
         "ffmpeg", "-v", "error", "-y",
+        "-ss", f"{start_offset:.3f}",
         "-i", str(src),
         "-t", f"{target_dur:.3f}",
         "-c:v", "libx264", "-pix_fmt", "yuv420p", "-an",
