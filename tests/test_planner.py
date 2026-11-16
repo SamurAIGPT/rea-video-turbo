@@ -1,4 +1,4 @@
-"""Tests for muapi-video-reverse models catalog, planner, and client."""
+"""Tests for rea-video-turbo models catalog, planner, and client."""
 from pathlib import Path
 from rea_video_turbo.models_catalog import resolve_model, get_endpoint_slug, MODELS
 from rea_video_turbo.client import MuapiClient

@@ -1,4 +1,4 @@
-"""CLI entrypoint for muapi-video-reverse."""
+"""CLI entrypoint for rea-video-turbo."""
 from __future__ import annotations
 
 import argparse
@@ -22,7 +22,7 @@ def cmd_probe(args: argparse.Namespace) -> int:
 
 
 def cmd_models(args: argparse.Namespace) -> int:
-    print(f"Muapi Supported Models (muapi-video-reverse v{__version__}):\n")
+    print(f"Muapi Supported Models (rea-video-turbo v{__version__}):\n")
     for cat in ("video", "image", "character", "audio", "vlm"):
         print(f"[{cat.upper()}]")
         for k, v in MODELS.items():
@@ -136,7 +136,7 @@ def cmd_remake(args: argparse.Namespace) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        prog="muapi-video-reverse",
+        prog="rea-video-turbo",
         description="Reverse-engineer videos and execute AI remakes with Muapi API models.",
     )
     parser.add_argument("-v", "--version", action="version", version=f"%(prog)s {__version__}")
