@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "muapi-video-reverse"
+version = "0.1.0"
+description = "Shot-by-shot video reverse-engineering, forensic attribution, and AI remake engine powered by Muapi API models."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+dependencies = [
+  "httpx>=0.25.0",
+  "numpy>=1.24,<3",
+  "opencv-python-headless>=4.8,<5",
+  "Pillow>=9.0",
+  "PyYAML>=6.0",
+  "scenedetect>=0.6.0",
+  "videomd>=1.1",
+  "onnxruntime>=1.16",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7", "jsonschema>=4"]
+
+[project.scripts]
+muapi-video-reverse = "muapi_video_reverse.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["muapi_video_reverse*"]
