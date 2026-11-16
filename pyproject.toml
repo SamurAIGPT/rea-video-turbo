@@ -25,7 +25,6 @@ dev = ["pytest>=7", "jsonschema>=4"]
 
 [project.scripts]
 rea-video-turbo = "rea_video_turbo.cli:main"
-muapi-video-reverse = "rea_video_turbo.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["rea_video_turbo*"]
