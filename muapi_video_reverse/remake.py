@@ -218,6 +218,15 @@ def _find_video_url(res: dict) -> str | None:
     if isinstance(res_body, str) and res_body.startswith("http"):
         return res_body
     if isinstance(res_body, dict):
+        # Direct list of output URLs e.g. "outputs": ["https://cdn.muapi.ai/...mp4"]
+        outputs = res_body.get("outputs")
+        if isinstance(outputs, list) and outputs:
+            first = outputs[0]
+            if isinstance(first, str) and first.startswith("http"):
+                return first
+            if isinstance(first, dict) and isinstance(first.get("url"), str):
+                return first["url"]
+
         for k in ("video", "url", "output_url", "video_url"):
             v = res_body.get(k)
             if isinstance(v, str) and v.startswith("http"):

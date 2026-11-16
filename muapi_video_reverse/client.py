@@ -9,7 +9,7 @@ from typing import Any, Callable
 
 import httpx
 
-DEFAULT_BASE_URL = "https://api.muapi.ai"
+DEFAULT_BASE_URL = "https://api.muapi.ai/api/v1"
 
 
 class MuapiClientError(Exception):
@@ -77,7 +77,7 @@ class MuapiClient:
 
     def submit_task(self, slug: str, payload: dict[str, Any]) -> str:
         """Submits an async prediction task to Muapi."""
-        url = f"{self.base_url}/api/v1/{slug}"
+        url = f"{self.base_url}/{slug.lstrip('/')}"
         headers = self._headers()
         headers["Content-Type"] = "application/json"
 
