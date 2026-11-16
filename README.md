@@ -1,6 +1,6 @@
 <div align="center">
 
-# muapi-rea-video
+# rea-video-turbo
 
 **Reverse-engineer any video.**
 
@@ -12,7 +12,7 @@ Every breakdown is written in **[VIDEO.md](https://videomd.github.io/videomd/)**
 [![License](https://img.shields.io/badge/license-Apache--2.0-green)](LICENSE)
 [![Output: VIDEO.md](https://img.shields.io/badge/output-VIDEO.md-3d4fd6)](https://videomd.github.io/videomd/)
 [![Models: Muapi Unified](https://img.shields.io/badge/models-Seedance%20%7C%20Kling%20%7C%20Veo%20%7C%20Wan-8A2BE2)](https://muapi.ai)
-[![Runs in](https://img.shields.io/badge/runs%20in-Claude%20Code%20%7C%20Antigravity%20%7C%20Codex-orange)](https://github.com/SamurAIGPT/muapi-rea-video)
+[![Runs in](https://img.shields.io/badge/runs%20in-Claude%20Code%20%7C%20Antigravity%20%7C%20Codex-orange)](https://github.com/SamurAIGPT/rea-video-turbo)
 
 ---
 
@@ -30,8 +30,8 @@ Every breakdown is written in **[VIDEO.md](https://videomd.github.io/videomd/)**
 ### 1. Installation
 Requires **Python ≥ 3.10** and **FFmpeg**:
 ```bash
-git clone https://github.com/SamurAIGPT/muapi-rea-video.git
-cd muapi-rea-video
+git clone https://github.com/SamurAIGPT/rea-video-turbo.git
+cd rea-video-turbo
 pip install -e .
 ```
 
@@ -47,7 +47,7 @@ $env:MUAPI_API_KEY="your_muapi_api_key"
 
 ### 3. Break Down Any Video
 ```bash
-muapi-rea-video decompose /path/to/video.mp4 -o out/my_video
+rea-video-turbo decompose /path/to/video.mp4 -o out/my_video
 ```
 Outputs:
 - **`report.html`**: Visual report with storyboards, shot tables, camera moves, and lighting analysis.
@@ -58,18 +58,18 @@ Outputs:
 ### 4. Plan the Remake
 Plan generation units mapped to your model of choice:
 ```bash
-muapi-rea-video plan out/my_video --model seedance-2.5
+rea-video-turbo plan out/my_video --model seedance-2.5
 # Or Kling:
-muapi-rea-video plan out/my_video --model kling-4.0
+rea-video-turbo plan out/my_video --model kling-4.0
 ```
 
 ### 5. Execute & Render Side-by-Side Comparison
 ```bash
 # Dry run (inspect prompts & model payloads with zero cost):
-muapi-rea-video remake out/my_video --dry-run
+rea-video-turbo remake out/my_video --dry-run
 
 # Live generation (dispatches to Muapi, downloads clips, and builds side-by-side compare):
-muapi-rea-video remake out/my_video
+rea-video-turbo remake out/my_video
 ```
 Outputs:
 - **`remake.mp4`**: All generated clips retimed to the original shot durations and synced with audio.
@@ -131,7 +131,7 @@ To keep execution blazing fast and cost-efficient, standard media operations run
 
 ## Supported Models Catalog
 
-List all available models at any time with `muapi-rea-video models`:
+List all available models at any time with `rea-video-turbo models`:
 
 ```text
 [VIDEO]
@@ -165,11 +165,11 @@ List all available models at any time with `muapi-rea-video models`:
 
 | Command | Description |
 | :--- | :--- |
-| `muapi-rea-video probe <video>` | Quick inspection of video metadata (codec, FPS, resolution, duration). |
-| `muapi-rea-video models` | List all supported Muapi generative models, limits, and pricing. |
-| `muapi-rea-video decompose <video> -o <dir>` | Shot boundary detection, contact sheets, and forensic attribution. |
-| `muapi-rea-video plan <dir> --model <model>` | Batch shots into model generation units and write `jobs.json`. |
-| `muapi-rea-video remake <dir> [--dry-run]` | Execute generation tasks on Muapi and render `remake.mp4` & `compare.mp4`. |
+| `rea-video-turbo probe <video>` | Quick inspection of video metadata (codec, FPS, resolution, duration). |
+| `rea-video-turbo models` | List all supported Muapi generative models, limits, and pricing. |
+| `rea-video-turbo decompose <video> -o <dir>` | Shot boundary detection, contact sheets, and forensic attribution. |
+| `rea-video-turbo plan <dir> --model <model>` | Batch shots into model generation units and write `jobs.json`. |
+| `rea-video-turbo remake <dir> [--dry-run]` | Execute generation tasks on Muapi and render `remake.mp4` & `compare.mp4`. |
 
 ---
 
