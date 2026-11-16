@@ -1,8 +1,8 @@
 """Tests for muapi-video-reverse models catalog, planner, and client."""
 from pathlib import Path
-from muapi_video_reverse.models_catalog import resolve_model, get_endpoint_slug, MODELS
-from muapi_video_reverse.client import MuapiClient
-from muapi_video_reverse.planner import _create_generation_job
+from rea_video_turbo.models_catalog import resolve_model, get_endpoint_slug, MODELS
+from rea_video_turbo.client import MuapiClient
+from rea_video_turbo.planner import _create_generation_job
 
 
 def test_models_catalog_resolution():

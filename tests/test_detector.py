@@ -1,6 +1,6 @@
 """Tests for video metadata probing and detector."""
 from pathlib import Path
-from muapi_video_reverse.detector import probe_video, detect_shots
+from rea_video_turbo.detector import probe_video, detect_shots
 
 
 def test_probe_sample_video():
