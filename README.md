@@ -4,14 +4,14 @@
 
 **Reverse-engineer any video.**
 
-Shot by shot: was it filmed, AI-generated, or coded — and how to remake it with **[Muapi API](https://muapi.ai)**.
+Shot by shot: was it filmed, AI-generated, or coded — and how to remake it with generative video models.
 
 Every breakdown is written in **[VIDEO.md](https://videomd.github.io/videomd/)**, an open format that agents and models read layer by layer.
 
 [![Python](https://img.shields.io/badge/python-%E2%89%A53.10-blue)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-Apache--2.0-green)](LICENSE)
 [![Output: VIDEO.md](https://img.shields.io/badge/output-VIDEO.md-3d4fd6)](https://videomd.github.io/videomd/)
-[![Models: Muapi Unified](https://img.shields.io/badge/models-Seedance%20%7C%20Kling%20%7C%20Veo%20%7C%20Wan-8A2BE2)](https://muapi.ai)
+![Models](https://img.shields.io/badge/models-Seedance%20%7C%20Kling%20%7C%20Veo%20%7C%20Wan-8A2BE2)
 [![Runs in](https://img.shields.io/badge/runs%20in-Claude%20Code%20%7C%20Antigravity%20%7C%20Codex-orange)](https://github.com/SamurAIGPT/rea-video-turbo)
 
 ---
@@ -19,7 +19,7 @@ Every breakdown is written in **[VIDEO.md](https://videomd.github.io/videomd/)**
 ### What it does in 3 steps:
 1. **Deconstruct**: Scans any video to detect scene cuts, camera motion, audio stems (vocals, music, SFX), and typography.
 2. **Attribution**: Multimodal AI determines if each shot was shot on a phone, generated with AI, 3D animated, or built with code.
-3. **Automated Remake**: Batches the breakdown into generation units, dispatches calls to Muapi's unified API models, retimes each clip to the original cuts, and renders a side-by-side comparison video.
+3. **Automated Remake**: Batches the breakdown into generation units, dispatches calls to video generation models, retimes each clip to the original cuts, and renders a side-by-side comparison video.
 
 </div>
 
@@ -35,8 +35,8 @@ cd rea-video-turbo
 pip install -e .
 ```
 
-### 2. Configure Your Muapi API Key
-One single API key connects to 500+ AI models across video, image, audio, and vision:
+### 2. Configure Your API Key
+Generation runs through the [Muapi](https://muapi.ai) API, so set `MUAPI_API_KEY`:
 ```bash
 # On Linux / macOS:
 export MUAPI_API_KEY="your_muapi_api_key"
@@ -68,7 +68,7 @@ rea-video-turbo plan out/my_video --model kling-4.0
 # Dry run (inspect prompts & model payloads with zero cost):
 rea-video-turbo remake out/my_video --dry-run
 
-# Live generation (dispatches to Muapi, downloads clips, and builds side-by-side compare):
+# Live generation (dispatches to the generation API, downloads clips, and builds side-by-side compare):
 rea-video-turbo remake out/my_video
 ```
 Outputs:
@@ -111,16 +111,16 @@ Every breakdown separates the video into three independent layers:
 
 ---
 
-## Zero-Cost Local Processing + Muapi Generative Cloud
+## Local Processing + Generative Models
 
-To keep execution blazing fast and cost-efficient, standard media operations run **100% locally and free**:
+Standard media operations run locally and free:
 
 - **Free & Local Infrastructure (Zero API Cost)**:
   - **`ffmpeg`**: Slicing, probing, retiming, audio stem isolation, and side-by-side `compare.mp4` rendering.
   - **`scenedetect` & `opencv`**: Frame-accurate shot boundary detection and motion tracking.
   - **Local Ken Burns Engine**: Still-image zoom/pan shots (`still_motion`) are rebuilt locally using affine warp transforms without wasting video generation credits.
   - **`remotion`**: Motion graphics and typography rendering.
-- **Muapi API Models (Cloud Generative Intelligence)**:
+- **Generative models (via API)**:
   - **Video Models**: `seedance-2.5`, `kling-4.0`, `veo-3.1`, `wan-2.2`, `minimax-hailuo`.
   - **Image / Keyframe Models**: `flux-dev`, `flux-pro`, `midjourney`, `seedream`.
   - **Character & Lip-Sync**: `omnihuman-2.0`, `kling-avatar`, `sync-3`.
@@ -166,10 +166,10 @@ List all available models at any time with `rea-video-turbo models`:
 | Command | Description |
 | :--- | :--- |
 | `rea-video-turbo probe <video>` | Quick inspection of video metadata (codec, FPS, resolution, duration). |
-| `rea-video-turbo models` | List all supported Muapi generative models, limits, and pricing. |
+| `rea-video-turbo models` | List all supported generative models, limits, and pricing. |
 | `rea-video-turbo decompose <video> -o <dir>` | Shot boundary detection, contact sheets, and forensic attribution. |
 | `rea-video-turbo plan <dir> --model <model>` | Batch shots into model generation units and write `jobs.json`. |
-| `rea-video-turbo remake <dir> [--dry-run]` | Execute generation tasks on Muapi and render `remake.mp4` & `compare.mp4`. |
+| `rea-video-turbo remake <dir> [--dry-run]` | Execute generation tasks and render `remake.mp4` & `compare.mp4`. |
 
 ---
 
