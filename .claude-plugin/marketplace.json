@@ -1,0 +1,11 @@
+{
+  "name": "rea-video-turbo",
+  "owner": { "name": "SamurAIGPT" },
+  "plugins": [
+    {
+      "name": "rea-video-turbo",
+      "source": "./",
+      "description": "Shot-by-shot video breakdown and AI remake planning."
+    }
+  ]
+}

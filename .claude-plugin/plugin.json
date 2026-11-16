@@ -1,0 +1,10 @@
+{
+  "name": "rea-video-turbo",
+  "version": "0.1.0",
+  "description": "Break a video down shot by shot (live / AI / 3D / code / screen capture), review verdicts visually, and plan an AI remake.",
+  "author": { "name": "SamurAIGPT" },
+  "homepage": "https://github.com/SamurAIGPT/rea-video-turbo",
+  "repository": "https://github.com/SamurAIGPT/rea-video-turbo",
+  "license": "Apache-2.0",
+  "keywords": ["video", "forensics", "ai-video", "remake"]
+}

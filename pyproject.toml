@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "rea-video-turbo"
 version = "0.1.0"
-description = "Reverse engineer any video shot-by-shot (forensics, attribution, stems, lighting) and automate AI remakes using Muapi API models."
+description = "Reverse-engineer a video shot by shot (shot detection, metadata clues, audio BPM/SFX, on-screen text) and plan or run AI remakes."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "Apache-2.0" }
@@ -17,11 +17,12 @@ dependencies = [
   "PyYAML>=6.0",
   "scenedetect>=0.6.0",
   "videomd>=1.1",
-  "onnxruntime>=1.16",
 ]
 
 [project.optional-dependencies]
 dev = ["pytest>=7", "jsonschema>=4"]
+ocr = ["rapidocr_onnxruntime>=1.3"]
+stems = ["demucs"]
 
 [project.scripts]
 rea-video-turbo = "rea_video_turbo.cli:main"

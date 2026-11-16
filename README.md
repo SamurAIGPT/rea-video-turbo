@@ -17,8 +17,8 @@ Every breakdown is written in **[VIDEO.md](https://videomd.github.io/videomd/)**
 ---
 
 ### What it does in 3 steps:
-1. **Deconstruct**: Scans any video to detect scene cuts, camera motion, audio stems (vocals, music, SFX), and typography.
-2. **Attribution**: Multimodal AI determines if each shot was shot on a phone, generated with AI, 3D animated, or built with code.
+1. **Deconstruct**: Detects scene cuts and a rough camera-motion label per shot, reads metadata clues (capture device, AIGC tags, C2PA, editor signature), estimates audio BPM and sound-effect hits, and finds on-screen text and overlays (optional OCR).
+2. **Attribution**: A multimodal model (or a local heuristic fallback) labels each shot as live action, AI video, 3D, code-rendered and so on, and an agent can review and correct the labels.
 3. **Automated Remake**: Batches the breakdown into generation units, dispatches calls to video generation models, retimes each clip to the original cuts, and renders a side-by-side comparison video.
 
 </div>
@@ -50,10 +50,12 @@ $env:MUAPI_API_KEY="your_muapi_api_key"
 rea-video-turbo decompose /path/to/video.mp4 -o out/my_video
 ```
 Outputs:
-- **`report.html`**: Visual report with storyboards, shot tables, camera moves, and lighting analysis.
+- **`report.html`**: Visual report with storyboards, shot tables, camera moves, metadata clues, audio and on-screen-text summary.
 - **`VIDEO.md`**: Layered, token-efficient specification for AI agents.
-- **`breakdown.json`**: Complete machine-readable forensics.
+- **`breakdown.json`**: Complete machine-readable breakdown.
 - **`storyboard.jpg`**: Visual contact sheet grid of all shots.
+- **`audio/`**: Extracted audio and short clips of detected sound-effect hits.
+- **`packaging/`**: `captions.srt` and `captions.ass` when OCR is installed (`pip install -e ".[ocr]"`).
 
 ### 4. Plan the Remake
 Plan generation units mapped to your model of choice:
@@ -81,17 +83,17 @@ Outputs:
 
 | Video Type | Examples | What You Get |
 |---|---|---|
-| **Live Footage** | Tabletop product demos, talking-heads, vlogs, store visits | Camera setups, framing (close-up/medium/wide), motion physics, lighting analysis, and color grading. |
+| **Live Footage** | Tabletop product demos, talking-heads, vlogs, store visits | Shot boundaries, framing and camera-move labels, and metadata clues such as capture device and editor. |
 | **AI Video** | Text/image-to-video, AI short dramas, AI music videos | Evidence, reverse-engineered prompts per shot, and batching strategy for generation models. |
 | **Digital Avatar** | Audio-driven portraits, lip-sync | Identifies avatar shots, character reference requirements, and audio driving tracks. |
 | **3D / Animation** | Product animations, Blender/C4D explainers, 2D animation | Whether to regenerate with video models or render from 3D code. |
-| **Code / Template** | Kinetic typography, UI walkthroughs, animated cards | Text, layout, and motion timing ready to rebuild as a Remotion project. |
+| **Code / Template** | Kinetic typography, UI walkthroughs, animated cards | Text, layout, and motion timing detected as on-screen text and overlays, a starting point for rebuilding in code. |
 | **Screen Recording** | Software tutorials, web demos | Separates real UI recordings you need to supply from code-renderable elements. |
 | **Mixed / Edits** | AI character + code UI + real screen recording | Each shot evaluated independently and reassembled on the master timeline. |
 
 ---
 
-## The Three Layers of Video Forensics
+## The Three Layers of a Breakdown
 
 Every breakdown separates the video into three independent layers:
 
@@ -106,7 +108,7 @@ Every breakdown separates the video into three independent layers:
 ```
 
 1. **Visual Layer (Bottom)**: What was captured or generated.
-2. **Packaging Layer (Middle)**: Overlaid subtitles, text styling, and stickers (reproducible with Remotion or local code).
+2. **Packaging Layer (Middle)**: Overlaid subtitles, text styling, and stickers (captured as SRT/ASS when OCR is installed).
 3. **Audio Layer (Top)**: Human vs. TTS voiceover, background music tempo/BPM, and sound effects synced to text/action beats.
 
 ---
@@ -119,7 +121,6 @@ Standard media operations run locally and free:
   - **`ffmpeg`**: Slicing, probing, retiming, audio stem isolation, and side-by-side `compare.mp4` rendering.
   - **`scenedetect` & `opencv`**: Frame-accurate shot boundary detection and motion tracking.
   - **Local Ken Burns Engine**: Still-image zoom/pan shots (`still_motion`) are rebuilt locally using affine warp transforms without wasting video generation credits.
-  - **`remotion`**: Motion graphics and typography rendering.
 - **Generative models (via API)**:
   - **Video Models**: `seedance-2.5`, `kling-4.0`, `veo-3.1`, `wan-2.2`, `minimax-hailuo`.
   - **Image / Keyframe Models**: `flux-dev`, `flux-pro`, `midjourney`, `seedream`.
@@ -165,11 +166,23 @@ List all available models at any time with `rea-video-turbo models`:
 
 | Command | Description |
 | :--- | :--- |
-| `rea-video-turbo probe <video>` | Quick inspection of video metadata (codec, FPS, resolution, duration). |
+| `rea-video-turbo probe <video>` | Video metadata plus forensic clues (device, AIGC tags, C2PA, editor). |
+| `rea-video-turbo summary <dir>` | Compact conclusion plus shots that need review. |
+| `rea-video-turbo review <dir>` / `apply-review <dir>` | Write per-shot visual review tasks for an agent, then merge its answers. |
+| `rea-video-turbo correct <dir> --shots 3,4 --label L` | Fix a wrong label; corrections are remembered. |
+| `rea-video-turbo prefs [KEY VALUE]` / `memory` | Show or set preferences; show stored corrections. |
 | `rea-video-turbo models` | List all supported generative models, limits, and pricing. |
-| `rea-video-turbo decompose <video> -o <dir>` | Shot boundary detection, contact sheets, and forensic attribution. |
+| `rea-video-turbo decompose <video> -o <dir>` | Shot detection, contact sheets, metadata clues, audio and on-screen-text analysis, and per-shot labels (`--stems`, `--no-packaging`). |
 | `rea-video-turbo plan <dir> --model <model>` | Batch shots into model generation units and write `jobs.json`. |
 | `rea-video-turbo remake <dir> [--dry-run]` | Execute generation tasks and render `remake.mp4` & `compare.mp4`. |
+
+---
+
+## Docs
+
+- [docs/cli.md](docs/cli.md): CLI usage
+- [docs/what-it-detects.md](docs/what-it-detects.md): what is detected and how
+- [skills/rea-video-turbo/SKILL.md](skills/rea-video-turbo/SKILL.md): agent workflow
 
 ---
 

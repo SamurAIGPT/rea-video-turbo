@@ -57,6 +57,36 @@ def _build_video_md(b: dict[str, Any]) -> str:
             f"{v.get('camera_move', s.get('camera_motion', '-'))} | {prompt} |"
         )
 
+    forensics = b.get("forensics") or {}
+    if forensics.get("clues"):
+        lines += ["", "## Metadata Clues"] + [f"- {c}" for c in forensics["clues"]]
+
+    audio = b.get("audio") or {}
+    if audio:
+        lines += ["", "## Audio"]
+        if audio.get("has_audio"):
+            bpm = audio.get("bpm") if (audio.get("bpm_confidence") or 0) >= 0.1 else None
+            lines += [
+                f"- **BPM**: {bpm if bpm else 'n/a (no clear beat)'}",
+                f"- **Speech / Music / Silence**: {audio.get('speech_ratio')} / {audio.get('music_ratio')} / {audio.get('silence_ratio')}",
+                f"- **SFX candidates**: {len(audio.get('sfx', []))}",
+            ]
+        else:
+            lines.append("- No audio track.")
+
+    pk = b.get("packaging") or {}
+    if pk:
+        r = pk.get("rhythm") or {}
+        lines += ["", "## Packaging & Rhythm"]
+        if r:
+            lines.append("- **Rhythm**: " + ", ".join(f"{k}: {v}" for k, v in r.items()))
+        if pk.get("ocr") == "ok":
+            lines.append(f"- **On-screen text lines**: {len(pk.get('text_lines', []))} (captions.srt / captions.ass in `packaging/`)")
+        elif pk.get("ocr_hint"):
+            lines.append(f"- OCR unavailable. {pk['ocr_hint']}")
+        if pk.get("overlays"):
+            lines.append(f"- **Overlay/sticker regions**: {len(pk['overlays'])}")
+
     lines += [
         "",
         "## Remake Recommendations (Powered by Muapi)",

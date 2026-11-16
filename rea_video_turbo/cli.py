@@ -7,8 +7,12 @@ import sys
 from pathlib import Path
 
 from . import __version__
+from . import memory, review
+from .audio import analyze_audio
 from .detector import detect_shots, probe_video
+from .forensics import probe_forensics, shot_evidence, summarize_breakdown
 from .models_catalog import MODELS, resolve_model
+from .packaging import analyze_packaging
 from .planner import plan_remake
 from .remake import assemble_remake, execute_remake
 from .report import generate_reports
@@ -17,7 +21,60 @@ from .vlm import MuapiVLM
 
 def cmd_probe(args: argparse.Namespace) -> int:
     meta = probe_video(args.video)
-    print(json.dumps(meta, indent=2))
+    meta["forensics"] = probe_forensics(args.video)
+    print(json.dumps(meta, indent=2, ensure_ascii=False))
+    return 0
+
+
+def cmd_summary(args: argparse.Namespace) -> int:
+    path = Path(args.breakdown)
+    if path.is_dir():
+        path = path / "breakdown.json"
+    print(summarize_breakdown(json.loads(path.read_text(encoding="utf-8"))))
+    return 0
+
+
+def cmd_review(args: argparse.Namespace) -> int:
+    tasks, answers = review.build_review_tasks(args.dir)
+    print(f"Review tasks:   {tasks}\nAnswer template: {answers}")
+    return 0
+
+
+def cmd_apply_review(args: argparse.Namespace) -> int:
+    try:
+        n = review.apply_review(args.dir, args.answers, by=args.by)
+    except ValueError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+    print(f"Updated {n} shot(s).")
+    return 0
+
+
+def cmd_correct(args: argparse.Namespace) -> int:
+    shots = [int(x) for x in args.shots.split(",") if x.strip()]
+    try:
+        n = review.correct(args.dir, shots, args.label, args.note)
+    except ValueError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+    print(f"Corrected {n} shot(s).")
+    return 0
+
+
+def cmd_prefs(args: argparse.Namespace) -> int:
+    if args.key and args.value is not None:
+        value: object = args.value
+        if value.lower() in ("true", "on", "yes"):
+            value = True
+        elif value.lower() in ("false", "off", "no"):
+            value = False
+        memory.set_pref(args.key, value)
+    print(json.dumps(memory.get_prefs(), indent=2, ensure_ascii=False))
+    return 0
+
+
+def cmd_memory(args: argparse.Namespace) -> int:
+    print(json.dumps(memory.list_memory(), indent=2, ensure_ascii=False))
     return 0
 
 
@@ -70,6 +127,16 @@ def cmd_decompose(args: argparse.Namespace) -> int:
         type_counts[lbl] = type_counts.get(lbl, 0) + 1
         print(f"   Shot #{idx} ({sh['duration']}s): {lbl.upper():14s} - Move: {analysis.get('camera_move', '-')}")
 
+    print("   Analyzing metadata forensics, audio and on-screen packaging...")
+    forensics = probe_forensics(video_path)
+    for sh in shots:
+        try:
+            sh["forensics"] = shot_evidence(video_path, sh)
+        except Exception as e:  # evidence is best-effort
+            sh["forensics"] = {"error": str(e)}
+    audio = analyze_audio(video_path, out_dir, with_stems=args.stems)
+    packaging = None if args.no_packaging else analyze_packaging(video_path, shots, out_dir)
+
     mix_str = ", ".join(f"{k}: {v}" for k, v in type_counts.items())
     breakdown_data = {
         "source": meta,
@@ -79,6 +146,9 @@ def cmd_decompose(args: argparse.Namespace) -> int:
             "production_mix_str": mix_str,
             "vlm_model": vlm.model if use_vlm else "heuristic",
         },
+        "forensics": forensics,
+        "audio": audio,
+        "packaging": packaging,
         "shots": shots,
     }
 
@@ -160,7 +230,38 @@ def main(argv: list[str] | None = None) -> int:
     p_dec.add_argument("--vlm-model", default="gemini-2.5-flash", help="VLM model ID on Muapi (default: gemini-2.5-flash)")
     p_dec.add_argument("--dry-run", action="store_true", help="Skip external API calls")
     p_dec.add_argument("--api-key", default="", help="Muapi API key")
+    p_dec.add_argument("--stems", action="store_true", help="Separate stems (requires optional demucs)")
+    p_dec.add_argument("--no-packaging", action="store_true", help="Skip on-screen text / overlay / rhythm analysis")
     p_dec.set_defaults(func=cmd_decompose)
+
+    p_sum = sub.add_parser("summary", help="Print a compact conclusion and shots needing review.")
+    p_sum.add_argument("breakdown", help="breakdown.json or its directory")
+    p_sum.set_defaults(func=cmd_summary)
+
+    p_rev = sub.add_parser("review", help="Write per-shot visual review tasks for an agent.")
+    p_rev.add_argument("dir", help="Breakdown directory")
+    p_rev.set_defaults(func=cmd_review)
+
+    p_ar = sub.add_parser("apply-review", help="Merge review answers into the breakdown.")
+    p_ar.add_argument("dir", help="Breakdown directory")
+    p_ar.add_argument("answers", nargs="?", help="Answers JSON (default: review_answers.json)")
+    p_ar.add_argument("--by", help="Reviewer name")
+    p_ar.set_defaults(func=cmd_apply_review)
+
+    p_cor = sub.add_parser("correct", help="Correct the label of one or more shots.")
+    p_cor.add_argument("dir", help="Breakdown directory")
+    p_cor.add_argument("--shots", required=True, help="Comma-separated shot indexes, e.g. 3,4")
+    p_cor.add_argument("--label", required=True, help="Correct label")
+    p_cor.add_argument("--note", default="", help="Optional note")
+    p_cor.set_defaults(func=cmd_correct)
+
+    p_pref = sub.add_parser("prefs", help="Show or set preferences.")
+    p_pref.add_argument("key", nargs="?")
+    p_pref.add_argument("value", nargs="?")
+    p_pref.set_defaults(func=cmd_prefs)
+
+    p_mem = sub.add_parser("memory", help="Show stored preferences and corrections.")
+    p_mem.set_defaults(func=cmd_memory)
 
     # plan
     p_plan = sub.add_parser("plan", help="Plan generation units for a video remake.")
